@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   BarChart3,
   Hash,
@@ -8,37 +9,23 @@ import {
 } from "lucide-react";
 import { Stat, Bar, Chip, SentimentChip } from "./primitives.jsx";
 import { TONE_COLOR } from "../lib/lexicons.js";
+import { overviewStats } from "../lib/stats.js";
 
 /* ============================================================
  * OVERVIEW TAB
  * ============================================================ */
 
 export function OverviewTab({ tweets }) {
-  const total = tweets.length;
-  const byLabel = { positive: 0, neutral: 0, negative: 0 };
-  const toneCounts = {};
-  let totalLikes = 0,
-    totalRts = 0,
-    totalReplies = 0,
-    totalLen = 0,
-    totalEmoji = 0,
-    totalHashtags = 0;
-  for (const t of tweets) {
-    byLabel[t.sentiment.label]++;
-    for (const tag of t.tones) toneCounts[tag] = (toneCounts[tag] || 0) + 1;
-    totalLikes += t.likes;
-    totalRts += t.retweets;
-    totalReplies += t.replies;
-    totalLen += t.length;
-    totalEmoji += t.emoji;
-    totalHashtags += t.hashtags;
-  }
-  const toneSorted = Object.entries(toneCounts).sort((a, b) => b[1] - a[1]);
-  const avgLen = total ? Math.round(totalLen / total) : 0;
-  const avgEmoji = total ? (totalEmoji / total).toFixed(1) : 0;
-  const top = [...tweets]
-    .sort((a, b) => b.engagement - a.engagement)
-    .slice(0, 5);
+  const {
+    total,
+    byLabel,
+    toneSorted,
+    avgLen,
+    avgEmoji,
+    top,
+    totalLikes,
+    totalRts,
+  } = useMemo(() => overviewStats(tweets), [tweets]);
 
   return (
     <div className="space-y-6">
