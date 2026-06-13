@@ -21,10 +21,26 @@ export function tokenize(text) {
     .filter(Boolean);
 }
 
+// Compiled emoji regexes are cached per emoji-list array so countEmoji does not
+// recompile ~70 RegExps on every call (it runs once per tweet, several times).
+// String.prototype.match with a /g regex is stateless (it ignores and resets
+// lastIndex), so reusing the same compiled regexes across calls is safe.
+const _emojiRegexCache = new WeakMap();
+
+function emojiRegexes(list) {
+  let regexes = _emojiRegexCache.get(list);
+  if (!regexes) {
+    regexes = list.map(
+      (e) => new RegExp(e.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g"),
+    );
+    _emojiRegexCache.set(list, regexes);
+  }
+  return regexes;
+}
+
 export function countEmoji(text, list) {
   let count = 0;
-  for (const e of list) {
-    const re = new RegExp(e.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g");
+  for (const re of emojiRegexes(list)) {
     const m = text.match(re);
     if (m) count += m.length;
   }

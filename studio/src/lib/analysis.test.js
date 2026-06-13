@@ -35,6 +35,13 @@ describe("countEmoji", () => {
   it("returns 0 when no listed emoji are present", () => {
     expect(countEmoji("plain text", POSITIVE_EMOJI)).toBe(0);
   });
+
+  it("stays correct across repeated calls with the same list (cached regexes are stateless)", () => {
+    expect(countEmoji("🔥🔥", POSITIVE_EMOJI)).toBe(2);
+    expect(countEmoji("🔥", POSITIVE_EMOJI)).toBe(1);
+    expect(countEmoji("no emoji here", POSITIVE_EMOJI)).toBe(0);
+    expect(countEmoji("🔥🔥🔥", POSITIVE_EMOJI)).toBe(3);
+  });
 });
 
 describe("analyzeSentiment", () => {
