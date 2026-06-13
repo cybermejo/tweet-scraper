@@ -1,0 +1,18 @@
+{
+  "searchTerms": ["your keyword", "an exact phrase"],
+  "twitterHandles": ["SomeHandle"],
+  "startUrls": ["https://x.com/SomeHandle"],
+  "author": null,
+  "start": "2025-01-01",
+  "end": "2025-12-31",
+  "maxItems": 100,
+  "sort": "Latest",
+  "tweetLanguage": "en",
+  "onlyVerifiedUsers": false,
+  "onlyTwitterBlue": false,
+  "onlyVideo": false,
+  "onlyImage": false,
+  "onlyQuote": false,
+  "includeSearchTerms": false,
+  "fetchReplies": false
+}

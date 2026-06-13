@@ -1,0 +1,39 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv*/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Node / Vite (studio) ----
+node_modules/
+dist/
+
+# ---- Secrets & local config ----
+# NOTE: gitignore has no inline comments — keep patterns on their own lines.
+.env
+.env.*
+# real run config (commit vars.example.json instead)
+vars.json
+# personal Claude Code overrides (keep the shared settings.json tracked)
+.claude/settings.local.json
+
+# ---- Scraped data (third-party PII — DO NOT publish) ----
+tweets*.csv
+!tweets.sample.csv
+
+# ---- Project docs / scratch (design notes, not part of the shipped repo) ----
+# Anchored to the project root so a future scraper/docs or studio/docs can still
+# be tracked if you want it.
+/docs/
+
+# ---- OS / editor cruft ----
+.DS_Store
+*.swp
+.idea/
+.vscode/

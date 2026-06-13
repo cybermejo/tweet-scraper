@@ -1,0 +1,30 @@
+# Local guardrails that run before every commit.
+# Setup:  pip install pre-commit && pre-commit install
+# Bump hook versions later with:  pre-commit autoupdate
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff # lint (auto-fixes what it safely can)
+        args: [--fix]
+      - id: ruff-format # format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      # Hard stop: never let scraped data or the live run config be committed.
+      - id: block-pii-and-config
+        name: Block committing vars.json or scraped tweet CSVs
+        entry: >-
+          Refusing to commit vars.json or tweets*.csv — these contain run config
+          or third-party PII. Unstage them (they belong in .gitignore).
+        language: fail
+        files: '^(vars\.json|tweets.*\.csv)$'
+        exclude: '^tweets\.sample\.csv$'
