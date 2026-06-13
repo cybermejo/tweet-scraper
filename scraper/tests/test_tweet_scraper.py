@@ -10,7 +10,8 @@ from tweet_scraper import (
     CSV_COLUMNS,
     DEFAULTS,
     TWEET_REPLIES_URL,
-    _collect_replies,
+    _stream_replies,
+    _write_new,
     flatten,
     tweet_replies,
 )
@@ -109,8 +110,40 @@ def _make_row(tweet_id, reply_count, parent_id=""):
     }
 
 
-def test_collect_replies_appends_replies_for_tweets_with_reply_count():
-    rows = [_make_row("100", reply_count=2)]
+class _FakeWriter:
+    """Captures rows passed to writerow, standing in for csv.DictWriter."""
+
+    def __init__(self):
+        self.rows = []
+
+    def writerow(self, row):
+        self.rows.append(row)
+
+
+def test_write_new_writes_unseen_row():
+    writer = _FakeWriter()
+    seen = set()
+    assert _write_new(writer, seen, _make_row("100", reply_count=0)) is True
+    assert "100" in seen
+    assert [r["id"] for r in writer.rows] == ["100"]
+
+
+def test_write_new_skips_already_seen_row():
+    writer = _FakeWriter()
+    seen = {"100"}
+    assert _write_new(writer, seen, _make_row("100", reply_count=0)) is False
+    assert writer.rows == []
+
+
+def test_write_new_skips_empty_id():
+    writer = _FakeWriter()
+    seen = set()
+    assert _write_new(writer, seen, _make_row("", reply_count=5)) is False
+    assert writer.rows == []
+
+
+def test_stream_replies_writes_replies_for_tweet():
+    writer = _FakeWriter()
     seen = {"100"}
     mock_reply = {
         "id": "999",
@@ -118,37 +151,21 @@ def test_collect_replies_appends_replies_for_tweets_with_reply_count():
         "text": "reply text",
     }
     with patch("tweet_scraper.tweet_replies", return_value=iter([mock_reply])):
-        _collect_replies(rows, seen, "api_key", 100)
-    assert len(rows) == 2
-    assert rows[1]["id"] == "999"
-    assert rows[1]["parentTweetId"] == "100"
+        written = _stream_replies(writer, seen, "100", "api_key", 100)
+    assert written == 1
+    assert writer.rows[0]["id"] == "999"
+    assert writer.rows[0]["parentTweetId"] == "100"
 
 
-def test_collect_replies_skips_tweets_with_zero_reply_count():
-    rows = [_make_row("200", reply_count=0)]
-    seen = {"200"}
-    with patch("tweet_scraper.tweet_replies") as mock_tr:
-        _collect_replies(rows, seen, "api_key", 100)
-    mock_tr.assert_not_called()
-    assert len(rows) == 1
-
-
-def test_collect_replies_deduplicates_already_seen_replies():
-    rows = [_make_row("300", reply_count=1)]
-    seen = {"300", "999"}
+def test_stream_replies_deduplicates_already_seen_replies():
+    writer = _FakeWriter()
+    seen = {"100", "999"}
     mock_reply = {
         "id": "999",
         "author": {"userName": "r", "name": "R"},
         "text": "dupe",
     }
     with patch("tweet_scraper.tweet_replies", return_value=iter([mock_reply])):
-        _collect_replies(rows, seen, "api_key", 100)
-    assert len(rows) == 1
-
-
-def test_collect_replies_skips_empty_tweet_id():
-    rows = [_make_row("", reply_count=5)]
-    seen = set()
-    with patch("tweet_scraper.tweet_replies") as mock_tr:
-        _collect_replies(rows, seen, "api_key", 100)
-    mock_tr.assert_not_called()
+        written = _stream_replies(writer, seen, "100", "api_key", 100)
+    assert written == 0
+    assert writer.rows == []

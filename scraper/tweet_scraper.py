@@ -335,29 +335,6 @@ def tweet_replies(tweet_id: str, key: str, limit: int) -> Iterator[dict[str, Any
     )
 
 
-def _collect_replies(
-    rows: list[dict[str, Any]],
-    seen: set[str],
-    key: str,
-    limit: int,
-) -> None:
-    for row in list(rows):
-        if not row["id"]:
-            continue
-        if int(row.get("replyCount") or 0) > 0:
-            count = 0
-            for reply in tweet_replies(row["id"], key, limit):
-                flat = flatten(reply, parent_id=row["id"])
-                if flat["id"] and flat["id"] not in seen:
-                    seen.add(flat["id"])
-                    rows.append(flat)
-                    count += 1
-            print(
-                f"  [replies] tweet {row['id']} -> {count} replies (total: {len(rows)})",
-                file=sys.stderr,
-            )
-
-
 # ---------- flatten & write ------------------------------------------------
 
 CSV_COLUMNS = [
@@ -429,6 +406,64 @@ def flatten(t: dict[str, Any], source_term: str = "", parent_id: str = "") -> di
     }
 
 
+def _write_new(writer: csv.DictWriter[str], seen: set[str], row: dict[str, Any]) -> bool:
+    """Write a flattened row to the CSV if its id is new and non-empty.
+
+    Returns True if the row was written. Streaming each row as it is fetched
+    (instead of buffering everything until the end) means a mid-run failure
+    still leaves the already-paid-for tweets on disk.
+    """
+    rid = row["id"]
+    if rid and rid not in seen:
+        seen.add(rid)
+        writer.writerow(row)
+        return True
+    return False
+
+
+def _stream_replies(
+    writer: csv.DictWriter[str],
+    seen: set[str],
+    tweet_id: str,
+    key: str,
+    limit: int,
+) -> int:
+    """Fetch a tweet's replies and stream the new (unseen) ones to the CSV.
+
+    Returns the number of reply rows written.
+    """
+    written = 0
+    for reply in tweet_replies(tweet_id, key, limit):
+        if _write_new(writer, seen, flatten(reply, parent_id=tweet_id)):
+            written += 1
+    return written
+
+
+def _stream_query(
+    writer: csv.DictWriter[str],
+    seen: set[str],
+    tweets: Iterator[dict[str, Any]],
+    *,
+    source_term: str,
+    fetch_replies: bool,
+    reply_targets: list[str],
+) -> int:
+    """Flatten, dedup, and stream a batch of tweets to the CSV.
+
+    Each new tweet whose ``replyCount`` is positive has its id queued in
+    ``reply_targets`` (when ``fetch_replies`` is set) for a later reply pass.
+    Returns the number of new rows written.
+    """
+    count = 0
+    for tw in tweets:
+        row = flatten(tw, source_term=source_term)
+        if _write_new(writer, seen, row):
+            count += 1
+            if fetch_replies and int(row.get("replyCount") or 0) > 0:
+                reply_targets.append(row["id"])
+    return count
+
+
 # ---------- main ------------------------------------------------------------
 
 
@@ -488,42 +523,61 @@ def main() -> int:
         return 0
 
     key = get_api_key()
-    rows: list[dict[str, Any]] = []
     seen: set[str] = set()
-
-    for term, q in search_queries:
-        print(f"[search] {q}", file=sys.stderr)
-        count = 0
-        for tw in search_tweets(q, cfg, key, max_items):
-            row = flatten(tw, source_term=term if cfg.get("includeSearchTerms") else "")
-            if row["id"] and row["id"] not in seen:
-                seen.add(row["id"])
-                rows.append(row)
-                count += 1
-        print(f"  -> {count} new tweets (total: {len(rows)})", file=sys.stderr)
-
-    for h in sorted(handles):
-        print(f"[user ] @{h}", file=sys.stderr)
-        count = 0
-        for tw in user_tweets(h, key, max_items, since=since_dt, until=until_dt):
-            row = flatten(tw, source_term=f"@{h}" if cfg.get("includeSearchTerms") else "")
-            if row["id"] and row["id"] not in seen:
-                seen.add(row["id"])
-                rows.append(row)
-                count += 1
-        print(f"  -> {count} new tweets (total: {len(rows)})", file=sys.stderr)
-
-    if cfg.get("fetchReplies"):
-        print("[replies] fetching replies for tweets with replyCount > 0...", file=sys.stderr)
-        _collect_replies(rows, seen, key, max_items)
+    reply_targets: list[str] = []  # ids of written tweets to fetch replies for
+    total = 0
+    fetch_replies = bool(cfg.get("fetchReplies"))
+    include_terms = bool(cfg.get("includeSearchTerms"))
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
+    # Stream rows to the CSV as they arrive so a mid-run failure (network error,
+    # rate-limit exhaustion, Ctrl-C) still leaves the already-paid-for tweets on
+    # disk — the `with` block flushes and closes the file as the exception unwinds.
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         writer.writeheader()
-        writer.writerows(rows)
 
-    print(f"\nWrote {len(rows)} unique tweets -> {args.out}", file=sys.stderr)
+        for term, q in search_queries:
+            print(f"[search] {q}", file=sys.stderr)
+            count = _stream_query(
+                writer,
+                seen,
+                search_tweets(q, cfg, key, max_items),
+                source_term=term if include_terms else "",
+                fetch_replies=fetch_replies,
+                reply_targets=reply_targets,
+            )
+            total += count
+            print(f"  -> {count} new tweets (total: {total})", file=sys.stderr)
+
+        for h in sorted(handles):
+            print(f"[user ] @{h}", file=sys.stderr)
+            count = _stream_query(
+                writer,
+                seen,
+                user_tweets(h, key, max_items, since=since_dt, until=until_dt),
+                source_term=f"@{h}" if include_terms else "",
+                fetch_replies=fetch_replies,
+                reply_targets=reply_targets,
+            )
+            total += count
+            print(f"  -> {count} new tweets (total: {total})", file=sys.stderr)
+
+        if reply_targets:
+            print(
+                "[replies] fetching replies for tweets with replyCount > 0...",
+                file=sys.stderr,
+            )
+            for tid in reply_targets:
+                written = _stream_replies(writer, seen, tid, key, max_items)
+                total += written
+                if written:
+                    print(
+                        f"  [replies] tweet {tid} -> {written} replies (total: {total})",
+                        file=sys.stderr,
+                    )
+
+    print(f"\nWrote {total} unique tweets -> {args.out}", file=sys.stderr)
     return 0
 
 
