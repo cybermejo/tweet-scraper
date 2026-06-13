@@ -126,9 +126,54 @@ def tweet_created_at(t: dict[str, Any]) -> datetime | None:
 # ---------- config ----------------------------------------------------------
 
 
+# Accepted types per known config key. `type(None)` marks a nullable field.
+# bool is intentionally allowed for maxItems too (it is an int subclass) — not
+# worth special-casing for a config validator.
+_CONFIG_TYPES: dict[str, tuple[type, ...]] = {
+    "author": (str, type(None)),
+    "customMapFunction": (str, type(None)),
+    "end": (str, type(None)),
+    "fetchReplies": (bool,),
+    "includeSearchTerms": (bool,),
+    "maxItems": (int, float),
+    "onlyImage": (bool,),
+    "onlyQuote": (bool,),
+    "onlyTwitterBlue": (bool,),
+    "onlyVerifiedUsers": (bool,),
+    "onlyVideo": (bool,),
+    "searchTerms": (list,),
+    "sort": (str,),
+    "start": (str, type(None)),
+    "startUrls": (list,),
+    "tweetLanguage": (str, type(None)),
+    "twitterHandles": (list,),
+}
+
+
+def validate_config(cfg: dict[str, Any]) -> None:
+    """Warn on unknown keys and reject known keys with the wrong type.
+
+    Unknown keys only warn: the config schema mirrors the Apify Tweet Scraper V2
+    input (a superset of what this script implements), so an existing Apify
+    vars.json must still load. A type mismatch on a known key is a hard error
+    because it would otherwise crash or misbehave deep in the run.
+    """
+    for key in cfg:
+        if key not in _CONFIG_TYPES:
+            print(f"[warn] unknown config key '{key}' — ignored.", file=sys.stderr)
+    for key, types in _CONFIG_TYPES.items():
+        if key in cfg and not isinstance(cfg[key], types):
+            expected = " or ".join(t.__name__ for t in types)
+            got = type(cfg[key]).__name__
+            sys.exit(f"Config error: '{key}' must be {expected}, got {got}.")
+
+
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as f:
         cfg = json.load(f)
+    if not isinstance(cfg, dict):
+        sys.exit("Config error: the top-level JSON in the config file must be an object.")
+    validate_config(cfg)
     return {**DEFAULTS, **cfg}
 
 
