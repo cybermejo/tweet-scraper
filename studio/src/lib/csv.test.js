@@ -84,4 +84,15 @@ describe("parseCSV", () => {
     const rows = await parseCSV(csv);
     expect(rows[0].uid).toBe("999");
   });
+
+  it("parses a large input (past the worker threshold) correctly", async () => {
+    const lines = ["text,likeCount"];
+    for (let i = 0; i < 30000; i++) lines.push(`tweet number ${i},${i}`);
+    const csv = lines.join("\n");
+    expect(csv.length).toBeGreaterThan(512 * 1024); // exercises worker:true path
+    const rows = await parseCSV(csv);
+    expect(rows).toHaveLength(30000);
+    expect(rows[0].text).toBe("tweet number 0");
+    expect(rows[29999].likes).toBe(29999);
+  });
 });

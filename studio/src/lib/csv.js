@@ -48,11 +48,18 @@ export function normalize(row) {
   };
 }
 
+// Above this size, parse on a background worker so a big paste/upload doesn't
+// freeze the UI. Small inputs parse on the main thread — the worker's
+// serialization overhead makes it slower for them, and PapaParse falls back to
+// synchronous parsing anyway when no Worker global exists (e.g. in tests).
+const WORKER_THRESHOLD_BYTES = 512 * 1024;
+
 export function parseCSV(text) {
   return new Promise((resolve, reject) => {
     Papa.parse(text, {
       header: true,
       skipEmptyLines: true,
+      worker: text.length > WORKER_THRESHOLD_BYTES,
       complete: (res) => {
         const rows = (res.data || [])
           .map(normalize)
