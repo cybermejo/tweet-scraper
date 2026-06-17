@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Heart, Repeat2, MessageSquare, Eye, Wand2, X } from "lucide-react";
 import { Chip, SentimentChip } from "./primitives.jsx";
 import { TONE_DEFS, TONE_COLOR } from "../lib/lexicons.js";
+import { MAX_VISIBLE, capNotice } from "../lib/display.js";
 
 /* ============================================================
  * TWEETS TAB
@@ -14,7 +15,7 @@ export function TweetsTab({ tweets, selection, onJumpToCaptions }) {
   const [sortKey, setSortKey] = useState("engagement");
   const [onlySelected, setOnlySelected] = useState(false);
 
-  const filtered = useMemo(() => {
+  const matched = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return tweets
       .filter(
@@ -34,9 +35,11 @@ export function TweetsTab({ tweets, selection, onJumpToCaptions }) {
         if (sortKey === "date")
           return (b.date || "").localeCompare(a.date || "");
         return 0;
-      })
-      .slice(0, 500);
+      });
   }, [tweets, q, sentFilter, toneFilter, sortKey, onlySelected, selection]);
+
+  const filtered = useMemo(() => matched.slice(0, MAX_VISIBLE), [matched]);
+  const notice = capNotice(matched.length);
 
   const visibleIds = useMemo(() => filtered.map((t) => t.uid), [filtered]);
   const allVisibleSelected =
@@ -102,9 +105,13 @@ export function TweetsTab({ tweets, selection, onJumpToCaptions }) {
           Selected only
         </label>
         <span className="text-xs text-slate-500 ml-auto">
-          {filtered.length} of {tweets.length}
+          {matched.length} of {tweets.length}
         </span>
       </div>
+
+      {notice && (
+        <div className="text-xs text-slate-500 -mt-1 px-1">{notice}</div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 text-sm">
         <span className="font-medium text-indigo-900">
