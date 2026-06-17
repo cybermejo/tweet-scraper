@@ -1,0 +1,355 @@
+/* ============================================================
+ * LEXICONS & TONE PATTERNS
+ * ============================================================ */
+
+export const POSITIVE_WORDS = new Set([
+  "love",
+  "loved",
+  "loving",
+  "amazing",
+  "awesome",
+  "great",
+  "fantastic",
+  "wonderful",
+  "excellent",
+  "beautiful",
+  "perfect",
+  "happy",
+  "excited",
+  "thrilled",
+  "delighted",
+  "enjoy",
+  "enjoyed",
+  "best",
+  "better",
+  "good",
+  "nice",
+  "cool",
+  "wow",
+  "yay",
+  "win",
+  "wins",
+  "winning",
+  "success",
+  "proud",
+  "grateful",
+  "thankful",
+  "thanks",
+  "thank",
+  "blessed",
+  "inspire",
+  "inspired",
+  "inspiring",
+  "stunning",
+  "gorgeous",
+  "brilliant",
+  "genius",
+  "masterpiece",
+  "legendary",
+  "iconic",
+  "favorite",
+  "fave",
+  "incredible",
+  "magical",
+  "vibes",
+  "slay",
+  "slayed",
+  "ate",
+  "bomb",
+  "fire",
+  "lit",
+  "dope",
+  "goat",
+  "queen",
+  "king",
+  "support",
+  "supporting",
+  "cutie",
+  "cute",
+  "adorable",
+  "pretty",
+  "sweet",
+  "bloom",
+  "blooming",
+  "obsessed",
+  "impressed",
+  "recommend",
+  "worth",
+  "quality",
+  "smooth",
+  "soft",
+  "fresh",
+  "charming",
+  "elegant",
+]);
+
+export const NEGATIVE_WORDS = new Set([
+  "hate",
+  "terrible",
+  "awful",
+  "horrible",
+  "bad",
+  "worst",
+  "worse",
+  "sad",
+  "angry",
+  "mad",
+  "upset",
+  "disappoint",
+  "disappointed",
+  "disappointing",
+  "fail",
+  "failed",
+  "failure",
+  "broken",
+  "ugly",
+  "stupid",
+  "dumb",
+  "trash",
+  "garbage",
+  "lame",
+  "boring",
+  "cringe",
+  "flop",
+  "flopped",
+  "cancel",
+  "cancelled",
+  "scam",
+  "fake",
+  "mid",
+  "cheap",
+  "gross",
+  "annoying",
+  "annoyed",
+  "frustrated",
+  "frustrating",
+  "ugh",
+  "yikes",
+  "reject",
+  "hurt",
+  "hurting",
+  "tired",
+  "sucks",
+  "suck",
+  "sucked",
+  "overpriced",
+  "rip",
+  "ripoff",
+  "regret",
+  "regretted",
+  "delayed",
+  "delay",
+  "missing",
+  "lost",
+  "stolen",
+  "rude",
+]);
+
+export const INTENSIFIERS = new Set([
+  "very",
+  "really",
+  "so",
+  "super",
+  "extremely",
+  "absolutely",
+  "totally",
+  "completely",
+]);
+export const NEGATIONS = new Set([
+  "not",
+  "no",
+  "never",
+  "dont",
+  "don't",
+  "doesn't",
+  "didn't",
+  "isn't",
+  "wasn't",
+  "won't",
+]);
+
+// Note: 😭 and 🥺 are intentionally treated as POSITIVE in social-media context
+// ("so good I'm crying" / affectionate). Move them to NEGATIVE_EMOJI if your
+// dataset is mostly customer-support / complaints rather than fan reactions.
+export const POSITIVE_EMOJI = [
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "💜",
+  "🖤",
+  "🤍",
+  "💖",
+  "💕",
+  "💓",
+  "💞",
+  "💗",
+  "💘",
+  "😍",
+  "🥰",
+  "😘",
+  "😊",
+  "🙂",
+  "😄",
+  "😁",
+  "😃",
+  "😆",
+  "🥳",
+  "🎉",
+  "✨",
+  "⭐",
+  "🌟",
+  "💫",
+  "🔥",
+  "💯",
+  "👏",
+  "👍",
+  "🙌",
+  "🤩",
+  "😎",
+  "💪",
+  "🏆",
+  "🥇",
+  "🌸",
+  "🌺",
+  "🌼",
+  "🌷",
+  "🌹",
+  "🌻",
+  "🌈",
+  "😭",
+  "🥺",
+];
+export const NEGATIVE_EMOJI = [
+  "😢",
+  "😞",
+  "😔",
+  "😟",
+  "😕",
+  "☹️",
+  "🙁",
+  "😣",
+  "😖",
+  "😫",
+  "😩",
+  "😤",
+  "😠",
+  "😡",
+  "🤬",
+  "👎",
+  "💔",
+  "😱",
+  "😰",
+  "😨",
+  "😥",
+];
+export const NEGATIVE_EMOTICONS = /(:\(|:-\(|D:|:\/)/g;
+
+export const TONE_DEFS = [
+  { tag: "Excited", color: "bg-orange-100 text-orange-800" },
+  { tag: "Promotional", color: "bg-purple-100 text-purple-800" },
+  { tag: "Informational", color: "bg-slate-100 text-slate-800" },
+  { tag: "Playful", color: "bg-pink-100 text-pink-800" },
+  { tag: "Inspirational", color: "bg-amber-100 text-amber-800" },
+  { tag: "Urgent", color: "bg-red-100 text-red-800" },
+  { tag: "Question", color: "bg-sky-100 text-sky-800" },
+  { tag: "CTA", color: "bg-indigo-100 text-indigo-800" },
+  { tag: "Storytelling", color: "bg-emerald-100 text-emerald-800" },
+  { tag: "Community", color: "bg-teal-100 text-teal-800" },
+  { tag: "Gratitude", color: "bg-yellow-100 text-yellow-800" },
+];
+export const TONE_COLOR = Object.fromEntries(
+  TONE_DEFS.map((t) => [t.tag, t.color]),
+);
+
+export const TONE_PATTERNS = [
+  {
+    tag: "Excited",
+    match: (t, m) =>
+      m.exclaim >= 2 ||
+      m.capsRatio > 0.3 ||
+      /\b(wow|omg|yay|yesss+|yess+|let\'?s go|insane|unreal)\b/i.test(t),
+  },
+  {
+    tag: "Promotional",
+    match: (t) =>
+      /\b(available|check out|shop now|launch|launching|announcing|new collection|drop|dropping|sale|off|discount|pre-?order|now available|just dropped|new!)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Informational",
+    match: (t) =>
+      /\b(update|announcement|fyi|reminder|guide|explained|learn|here\'?s how|breakdown)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Playful",
+    match: (t, m) =>
+      m.emoji >= 3 ||
+      /\b(lol|haha|hehe|teehee|aww+|bestie|besties|lmao)\b/i.test(t),
+  },
+  {
+    tag: "Inspirational",
+    match: (t) =>
+      /\b(dream|believe|journey|grow|growth|strength|courage|shine|bloom|rise|possible|never give up|keep going|you can|we can)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Urgent",
+    match: (t) =>
+      /\b(now|today|tonight|hurry|last chance|limited|ends soon|don\'?t miss|only \d+ (left|hours|days)|this week|tomorrow)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Question",
+    match: (t) =>
+      /\?/.test(t) &&
+      /\b(what|how|why|who|when|which|where|should|would|could|do you|have you|are you)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "CTA",
+    match: (t) =>
+      /\b(follow|share|retweet|rt|like|tag|comment|reply|dm|drop a|click|swipe|link in bio|subscribe|join)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Storytelling",
+    match: (t) =>
+      t.length > 160 &&
+      /\b(when|remember|once|today i|so i|then|after|before)\b/i.test(t),
+  },
+  {
+    tag: "Community",
+    match: (t) =>
+      /\b(we|us|our|together|fam|family|crew|team|community|everyone|y\'?all)\b/i.test(
+        t,
+      ),
+  },
+  {
+    tag: "Gratitude",
+    match: (t) =>
+      /\b(thank|thanks|grateful|appreciate|appreciated|blessed|bless)\b/i.test(
+        t,
+      ),
+  },
+];
+
+// Caption Studio's selectable target tones (a subset of the TONE_DEFS tags).
+export const CAPTION_TONES = [
+  "Playful",
+  "Excited",
+  "Promotional",
+  "Inspirational",
+  "Informational",
+  "Community",
+  "Gratitude",
+  "CTA",
+];
