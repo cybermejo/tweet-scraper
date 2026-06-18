@@ -7,13 +7,13 @@ hard rules come first because they matter most.
 
 A two-part tweet toolkit (monorepo — two independent subprojects):
 
-- **Scraper** — `scraper/` (`tweet_scraper.py`), a Python 3.11+ CLI that pulls
-  tweets from twitterapi.io (pay-per-use) into a flat CSV. Config schema mirrors
-  Apify Tweet Scraper V2.
+- **Scraper** — `scraper/` (`tweet_scraper/` package), a Python 3.11+ CLI that
+  pulls tweets from twitterapi.io (pay-per-use) into a flat CSV. Config schema
+  mirrors Apify Tweet Scraper V2.
 - **Studio** — `studio/` (Vite + React 18 + Tailwind 4), a browser app that
   ingests the CSV for tone/sentiment tagging and draft assistance.
 
-Data flow: `scraper/vars.json → scraper/tweet_scraper.py → tweets.csv → Tweet Studio`.
+Data flow: `scraper/vars.json → python -m tweet_scraper → tweets.csv → Tweet Studio`.
 
 ## Architecture
 
@@ -48,7 +48,7 @@ Run the full loop from `scraper/` and make sure every step passes:
 
 1. `ruff check .` — lint, zero errors
 2. `ruff format --check .` — formatting
-3. `mypy tweet_scraper.py` — type check
+3. `mypy tweet_scraper` — type check
 4. `pytest --cov=tweet_scraper` — all tests pass
 
 (CI runs the same four steps from `scraper/` — see `.github/workflows/ci.yml`.)
@@ -57,7 +57,7 @@ Run the full loop from `scraper/` and make sure every step passes:
 
 - When I say **"validate"** or **"ship it"** → run all four Validation steps and
   report results before doing anything else.
-- When I say **"dry run"** → `python tweet_scraper.py --dry-run` (never spends credits).
+- When I say **"dry run"** → `python -m tweet_scraper --dry-run` (never spends credits).
 - When I say **"scrape"** → `--dry-run` first, show me the queries, wait for OK,
   then run for real.
 

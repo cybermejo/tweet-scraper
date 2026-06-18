@@ -9,7 +9,7 @@ A two-part toolkit for collecting tweets and turning them into content insights:
    browser and does tone/sentiment tagging, engagement stats, and draft assistance.
 
 ```
-scraper/vars.json ──▶ scraper/tweet_scraper.py ──▶ tweets.csv ──▶ Tweet Studio ──▶ insights
+scraper/vars.json ──▶ python -m tweet_scraper ──▶ tweets.csv ──▶ Tweet Studio ──▶ insights
 ```
 
 The two halves are independent (separate toolchains); work on them from their
@@ -42,15 +42,18 @@ pip install -r requirements.txt          # runtime dep: requests
 export TWITTERAPI_IO_KEY="your_key_here"  # key comes from the env, never from a file
 
 cp vars.example.json vars.json            # then edit vars.json for your run
-python tweet_scraper.py                   # reads ./vars.json, writes ./tweets.csv
+python -m tweet_scraper                   # reads ./vars.json, writes ./tweets.csv
 ```
+
+(`pip install -e .` also installs a `tweet-scraper` console command equivalent to
+`python -m tweet_scraper`.)
 
 Options:
 
 ```bash
-python tweet_scraper.py --config path/to.json   # use a different config
-python tweet_scraper.py --out results.csv        # change output path
-python tweet_scraper.py --dry-run                # print the queries, don't call the API (free)
+python -m tweet_scraper --config path/to.json   # use a different config
+python -m tweet_scraper --out results.csv        # change output path
+python -m tweet_scraper --dry-run                # print the queries, don't call the API (free)
 ```
 
 **Always `--dry-run` first** — it shows the exact queries that would be billed,
@@ -112,7 +115,7 @@ pip install -r requirements-dev.txt
 
 ruff check .                 # lint
 ruff format --check .        # formatting
-mypy tweet_scraper.py        # type check
+mypy tweet_scraper           # type check
 pytest --cov=tweet_scraper   # tests + coverage
 ```
 
@@ -129,12 +132,18 @@ pip install pre-commit && pre-commit install
 
 ```
 scraper/                  # Python CLI scraper
-  tweet_scraper.py        # the CLI
+  tweet_scraper/          # the CLI package (flat public API via __init__)
+    __init__.py           #   re-exports the public API
+    __main__.py           #   enables `python -m tweet_scraper`
+    config.py             #   vars.json load/validate + date parsing
+    query.py              #   build_query + handle extraction
+    api.py                #   twitterapi.io HTTP client (paging/retry, fetchers)
+    cli.py                #   flatten → CSV, streaming writes, main
   tests/                  # pytest suite (no network / no API key needed)
   conftest.py             # makes tweet_scraper importable from tests
   requirements.txt        # runtime deps
   requirements-dev.txt    # dev/validation deps
-  pyproject.toml          # ruff / mypy / pytest config (tooling only)
+  pyproject.toml          # [project] packaging + ruff / mypy / pytest config
   vars.example.json       # template config — copy to vars.json (git-ignored)
   tweets.sample.csv       # tiny anonymized example output
 studio/                   # Tweet Studio (Vite + React)
@@ -146,10 +155,13 @@ CLAUDE.md                 # AI-assistant rules & validation loop
 
 ## Roadmap
 
-- Packaging: add a `[project]` table + console entry point (`tweet-scraper`).
-- Split `tweet_scraper.py` into a package as it grows (config / api / query / cli).
-- Config schema validation (reject unknown keys / bad types early).
-- Move to the `logging` module instead of `print(..., file=sys.stderr)`.
+Done: packaging (`[project]` + `tweet-scraper` console entry point), the
+`config / query / api / cli` package split, config-schema validation, and the
+move to the `logging` module. Possible next steps:
+
+- Tweet Studio: list virtualization for very large CSVs (the Tweets tab caps the
+  rendered list and shows a "top N of M" notice today).
+- Retry/backoff tuning and configurable rate limits for `paged_get`.
 
 ## License
 
