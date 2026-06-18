@@ -52,6 +52,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import logging
 import os
 import sys
 import time
@@ -61,6 +62,8 @@ from pathlib import Path
 from typing import Any
 
 import requests
+
+log = logging.getLogger("tweet_scraper")
 
 API_BASE = "https://api.twitterapi.io"
 ADVANCED_SEARCH_URL = f"{API_BASE}/twitter/tweet/advanced_search"
@@ -160,7 +163,7 @@ def validate_config(cfg: dict[str, Any]) -> None:
     """
     for key in cfg:
         if key not in _CONFIG_TYPES:
-            print(f"[warn] unknown config key '{key}' — ignored.", file=sys.stderr)
+            log.warning("unknown config key '%s' — ignored.", key)
     for key, types in _CONFIG_TYPES.items():
         if key in cfg and not isinstance(cfg[key], types):
             expected = " or ".join(t.__name__ for t in types)
@@ -527,6 +530,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # Progress/warnings go to stderr via logging; the dry-run report stays on
+    # stdout (it is the program's actual output, not progress chatter).
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
+
     if not args.config.exists():
         sys.exit(f"Config not found: {args.config}")
 
@@ -536,10 +543,7 @@ def main() -> int:
     until_dt = parse_config_date(cfg.get("end"), end_of_day=True)
 
     if cfg.get("customMapFunction"):
-        print(
-            "[warn] customMapFunction is a JS Apify feature — ignored in this script.",
-            file=sys.stderr,
-        )
+        log.warning("customMapFunction is a JS Apify feature — ignored in this script.")
     if since_dt and until_dt and since_dt > until_dt:
         sys.exit(f"Invalid range: start ({cfg['start']}) is after end ({cfg['end']}).")
 
@@ -583,7 +587,7 @@ def main() -> int:
         writer.writeheader()
 
         for term, q in search_queries:
-            print(f"[search] {q}", file=sys.stderr)
+            log.info("[search] %s", q)
             count = _stream_query(
                 writer,
                 seen,
@@ -593,10 +597,10 @@ def main() -> int:
                 reply_targets=reply_targets,
             )
             total += count
-            print(f"  -> {count} new tweets (total: {total})", file=sys.stderr)
+            log.info("  -> %d new tweets (total: %d)", count, total)
 
         for h in sorted(handles):
-            print(f"[user ] @{h}", file=sys.stderr)
+            log.info("[user ] @%s", h)
             count = _stream_query(
                 writer,
                 seen,
@@ -606,23 +610,17 @@ def main() -> int:
                 reply_targets=reply_targets,
             )
             total += count
-            print(f"  -> {count} new tweets (total: {total})", file=sys.stderr)
+            log.info("  -> %d new tweets (total: %d)", count, total)
 
         if reply_targets:
-            print(
-                "[replies] fetching replies for tweets with replyCount > 0...",
-                file=sys.stderr,
-            )
+            log.info("[replies] fetching replies for tweets with replyCount > 0...")
             for tid in reply_targets:
                 written = _stream_replies(writer, seen, tid, key, max_items)
                 total += written
                 if written:
-                    print(
-                        f"  [replies] tweet {tid} -> {written} replies (total: {total})",
-                        file=sys.stderr,
-                    )
+                    log.info("  [replies] tweet %s -> %d replies (total: %d)", tid, written, total)
 
-    print(f"\nWrote {total} unique tweets -> {args.out}", file=sys.stderr)
+    log.info("Wrote %d unique tweets -> %s", total, args.out)
     return 0
 
 
