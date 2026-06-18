@@ -1,6 +1,20 @@
-# Tooling configuration ONLY — this is intentionally NOT a packaging manifest.
-# There is no [project] table yet; turning this repo into an installable
-# package (entry points, versioning) is deferred — see README "Roadmap".
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tweet-scraper"
+version = "0.1.0"
+description = "Pay-per-use X (Twitter) tweet scraper via twitterapi.io"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = ["requests>=2.31.0"]
+
+[project.scripts]
+tweet-scraper = "tweet_scraper:main"
+
+[tool.setuptools]
+py-modules = ["tweet_scraper"]
 
 [tool.ruff]
 line-length = 100
