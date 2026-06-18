@@ -22,7 +22,9 @@ Data flow: `scraper/vars.json → scraper/tweet_scraper.py → tweets.csv → Tw
   (tweet → CSV row), `main` (CLI orchestration).
 - `scraper/tests/` — pytest, fully mocked (no network, no API key).
   `scraper/conftest.py` puts the scraper dir on `sys.path`.
-- `studio/src/App.jsx` — the entire Studio UI (lexicons, tone patterns, CSV upload).
+- `studio/src/` — the Studio UI. `App.jsx` is a thin shell; logic lives in
+  `lib/` (lexicons, analysis, csv, stats, display) and UI in `components/`
+  (one file per tab + shared primitives). Pure `lib/` modules have Vitest tests.
 - Config/secrets: API key comes from the `TWITTERAPI_IO_KEY` env var.
   `scraper/vars.json` is run config and is git-ignored; `scraper/vars.example.json`
   is the committed template.
@@ -49,6 +51,9 @@ Run the full loop from `scraper/` and make sure every step passes:
 4. `pytest --cov=tweet_scraper` — all tests pass
 
 (CI runs the same four steps from `scraper/` — see `.github/workflows/ci.yml`.)
+
+For setup & run instructions (deps, `TWITTERAPI_IO_KEY`, `vars.json`, Studio
+`npm` commands), see [README.md](README.md) — not duplicated here to avoid drift.
 
 ## Commands (trigger keywords)
 
