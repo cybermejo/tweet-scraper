@@ -7,19 +7,22 @@ hard rules come first because they matter most.
 
 A two-part tweet toolkit (monorepo — two independent subprojects):
 
-- **Scraper** — `scraper/` (`tweet_scraper.py`), a Python 3.11+ CLI that pulls
-  tweets from twitterapi.io (pay-per-use) into a flat CSV. Config schema mirrors
-  Apify Tweet Scraper V2.
+- **Scraper** — `scraper/` (`tweet_scraper/` package), a Python 3.11+ CLI that
+  pulls tweets from twitterapi.io (pay-per-use) into a flat CSV. Config schema
+  mirrors Apify Tweet Scraper V2.
 - **Studio** — `studio/` (Vite + React 18 + Tailwind 4), a browser app that
   ingests the CSV for tone/sentiment tagging and draft assistance.
 
-Data flow: `scraper/vars.json → scraper/tweet_scraper.py → tweets.csv → Tweet Studio`.
+Data flow: `scraper/vars.json → python -m tweet_scraper → tweets.csv → Tweet Studio`.
 
 ## Architecture
 
-- `scraper/tweet_scraper.py` — single-module CLI. Key seams: `build_query`
-  (search syntax), `paged_get` (HTTP + retry + cursor paging), `flatten`
-  (tweet → CSV row), `main` (CLI orchestration).
+- `scraper/tweet_scraper/` — the CLI package (flat public API preserved via
+  `__init__` re-exports, so `from tweet_scraper import X` still works). Modules:
+  `config` (vars.json load/validate + date parsing), `query` (`build_query`,
+  handle extraction), `api` (HTTP client: `paged_get` retry/cursor paging,
+  per-endpoint fetchers — patch HTTP here, e.g. `tweet_scraper.api.requests`),
+  `cli` (`flatten` tweet → CSV row, streaming writes, `main`).
 - `scraper/tests/` — pytest, fully mocked (no network, no API key).
   `scraper/conftest.py` puts the scraper dir on `sys.path`.
 - `studio/src/App.jsx` — the entire Studio UI (lexicons, tone patterns, CSV upload).
@@ -45,7 +48,7 @@ Run the full loop from `scraper/` and make sure every step passes:
 
 1. `ruff check .` — lint, zero errors
 2. `ruff format --check .` — formatting
-3. `mypy tweet_scraper.py` — type check
+3. `mypy tweet_scraper` — type check
 4. `pytest --cov=tweet_scraper` — all tests pass
 
 (CI runs the same four steps from `scraper/` — see `.github/workflows/ci.yml`.)
@@ -54,7 +57,7 @@ Run the full loop from `scraper/` and make sure every step passes:
 
 - When I say **"validate"** or **"ship it"** → run all four Validation steps and
   report results before doing anything else.
-- When I say **"dry run"** → `python tweet_scraper.py --dry-run` (never spends credits).
+- When I say **"dry run"** → `python -m tweet_scraper --dry-run` (never spends credits).
 - When I say **"scrape"** → `--dry-run` first, show me the queries, wait for OK,
   then run for real.
 

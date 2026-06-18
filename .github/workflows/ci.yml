@@ -36,7 +36,7 @@ jobs:
         run: ruff format --check .
 
       - name: Type check (mypy)
-        run: mypy tweet_scraper.py
+        run: mypy tweet_scraper
 
       - name: Tests (pytest + coverage)
         run: pytest --cov=tweet_scraper --cov-report=term-missing
