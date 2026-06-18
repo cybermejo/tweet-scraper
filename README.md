@@ -2,7 +2,7 @@
 
 A two-part toolkit for collecting tweets and turning them into content insights:
 
-1. **Tweet Scraper** (`scraper/`) — a Python CLI that pulls tweets from
+1. **Tweet Scraper** (`scraper/`) — a Python CLI package that pulls tweets from
    [twitterapi.io](https://twitterapi.io) (pay-per-use, ~$0.15 / 1,000 tweets — no
    monthly X API subscription) and writes them to a flat CSV.
 2. **Tweet Studio** (`studio/`) — a Vite + React app that ingests that CSV in the
@@ -38,22 +38,24 @@ existing `vars.json` works here unchanged.
 ```bash
 cd scraper
 python -m venv .venv && source .venv/bin/activate   # recommended
-pip install -r requirements.txt          # runtime dep: requests
+pip install -e .                          # installs deps + a `tweet-scraper` command
 export TWITTERAPI_IO_KEY="your_key_here"  # key comes from the env, never from a file
 
 cp vars.example.json vars.json            # then edit vars.json for your run
-python -m tweet_scraper                   # reads ./vars.json, writes ./tweets.csv
+tweet-scraper                             # reads ./vars.json, writes ./tweets.csv
 ```
 
-(`pip install -e .` also installs a `tweet-scraper` console command equivalent to
-`python -m tweet_scraper`.)
+`pip install -e .` installs the runtime dependency (`requests`) and a
+`tweet-scraper` console command. Prefer not to install? `pip install -r
+requirements.txt` then invoke the package directly with `python -m tweet_scraper`
+— the two are equivalent.
 
-Options:
+Options (interchangeable with `python -m tweet_scraper ...`):
 
 ```bash
-python -m tweet_scraper --config path/to.json   # use a different config
-python -m tweet_scraper --out results.csv        # change output path
-python -m tweet_scraper --dry-run                # print the queries, don't call the API (free)
+tweet-scraper --config path/to.json   # use a different config
+tweet-scraper --out results.csv        # change output path
+tweet-scraper --dry-run                # print the queries, don't call the API (free)
 ```
 
 **Always `--dry-run` first** — it shows the exact queries that would be billed,
@@ -97,6 +99,7 @@ cd studio
 npm install
 npm run dev        # local dev server
 npm run build      # production build into dist/
+npm test           # Vitest unit tests (analysis / csv / lexicons / stats / display)
 ```
 
 Open the app, upload a `tweets.csv` produced by the scraper, and explore the
