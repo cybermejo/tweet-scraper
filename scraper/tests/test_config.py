@@ -34,11 +34,11 @@ def test_validate_config_rejects_non_list_search_terms():
         validate_config({"searchTerms": "cats"})  # list expected
 
 
-def test_validate_config_warns_on_unknown_key_but_does_not_raise(capsys):
-    validate_config({"searchTermz": ["typo"]})  # unknown key -> warn, not error
-    err = capsys.readouterr().err
-    assert "searchTermz" in err
-    assert "unknown" in err.lower()
+def test_validate_config_warns_on_unknown_key_but_does_not_raise(caplog):
+    with caplog.at_level("WARNING"):
+        validate_config({"searchTermz": ["typo"]})  # unknown key -> warn, not error
+    assert "searchTermz" in caplog.text
+    assert "unknown" in caplog.text.lower()
 
 
 def test_load_config_merges_defaults(tmp_path):
