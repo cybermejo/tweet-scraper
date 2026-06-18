@@ -66,7 +66,7 @@ def test_tweet_replies_calls_paged_get_with_correct_args():
         "author": {"userName": "replier", "name": "Replier"},
         "text": "great tweet",
     }
-    with patch("tweet_scraper.paged_get", return_value=iter([mock_reply])) as mock_pg:
+    with patch("tweet_scraper.api.paged_get", return_value=iter([mock_reply])) as mock_pg:
         results = list(tweet_replies("123", "test_key", 20))
     mock_pg.assert_called_once_with(
         TWEET_REPLIES_URL,
@@ -79,7 +79,7 @@ def test_tweet_replies_calls_paged_get_with_correct_args():
 
 
 def test_tweet_replies_returns_empty_when_no_replies():
-    with patch("tweet_scraper.paged_get", return_value=iter([])):
+    with patch("tweet_scraper.api.paged_get", return_value=iter([])):
         results = list(tweet_replies("123", "test_key", 20))
     assert results == []
 
@@ -150,7 +150,7 @@ def test_stream_replies_writes_replies_for_tweet():
         "author": {"userName": "replier", "name": "Replier"},
         "text": "reply text",
     }
-    with patch("tweet_scraper.tweet_replies", return_value=iter([mock_reply])):
+    with patch("tweet_scraper.api.tweet_replies", return_value=iter([mock_reply])):
         written = _stream_replies(writer, seen, "100", "api_key", 100)
     assert written == 1
     assert writer.rows[0]["id"] == "999"
@@ -165,7 +165,7 @@ def test_stream_replies_deduplicates_already_seen_replies():
         "author": {"userName": "r", "name": "R"},
         "text": "dupe",
     }
-    with patch("tweet_scraper.tweet_replies", return_value=iter([mock_reply])):
+    with patch("tweet_scraper.api.tweet_replies", return_value=iter([mock_reply])):
         written = _stream_replies(writer, seen, "100", "api_key", 100)
     assert written == 0
     assert writer.rows == []

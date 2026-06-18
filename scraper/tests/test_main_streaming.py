@@ -59,7 +59,7 @@ def test_main_writes_scraped_tweets_to_csv(tmp_path):
     page = FakeResp(200, {"tweets": [_tweet("1"), _tweet("2")], "has_next_page": False})
     with (
         patch.dict(os.environ, {"TWITTERAPI_IO_KEY": "k"}),
-        patch("tweet_scraper.requests.get", return_value=page),
+        patch("tweet_scraper.api.requests.get", return_value=page),
     ):
         rc = _run_main(config, out)
     assert rc == 0
@@ -72,7 +72,7 @@ def test_main_writes_user_timeline_tweets(tmp_path):
     page = FakeResp(200, {"tweets": [_tweet("1"), _tweet("2")], "has_next_page": False})
     with (
         patch.dict(os.environ, {"TWITTERAPI_IO_KEY": "k"}),
-        patch("tweet_scraper.requests.get", return_value=page),
+        patch("tweet_scraper.api.requests.get", return_value=page),
     ):
         rc = _run_main(config, out)
     assert rc == 0
@@ -87,8 +87,8 @@ def test_main_persists_rows_fetched_before_a_midrun_crash(tmp_path):
     side_effect = [page1] + [requests.ConnectionError()] * 4
     with (
         patch.dict(os.environ, {"TWITTERAPI_IO_KEY": "k"}),
-        patch("tweet_scraper.time.sleep"),
-        patch("tweet_scraper.requests.get", side_effect=side_effect),
+        patch("tweet_scraper.api.time.sleep"),
+        patch("tweet_scraper.api.requests.get", side_effect=side_effect),
         pytest.raises(requests.ConnectionError),
     ):
         _run_main(config, out)
@@ -104,7 +104,7 @@ def test_main_streams_replies_after_main_tweets(tmp_path):
     reply_page = FakeResp(200, {"tweets": [_tweet("99")], "has_next_page": False})
     with (
         patch.dict(os.environ, {"TWITTERAPI_IO_KEY": "k"}),
-        patch("tweet_scraper.requests.get", side_effect=[search_page, reply_page]),
+        patch("tweet_scraper.api.requests.get", side_effect=[search_page, reply_page]),
     ):
         rc = _run_main(config, out)
     assert rc == 0
@@ -119,7 +119,7 @@ def test_main_skips_reply_fetch_when_reply_count_zero(tmp_path):
     search_page = FakeResp(200, {"tweets": [_tweet("1", replyCount=0)], "has_next_page": False})
     with (
         patch.dict(os.environ, {"TWITTERAPI_IO_KEY": "k"}),
-        patch("tweet_scraper.requests.get", side_effect=[search_page]) as mock_get,
+        patch("tweet_scraper.api.requests.get", side_effect=[search_page]) as mock_get,
     ):
         rc = _run_main(config, out)
     assert rc == 0

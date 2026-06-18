@@ -63,7 +63,7 @@ def test_extract_pagination_missing_is_false_empty():
 
 def test_paged_get_single_page():
     resp = FakeResp(200, {"tweets": [{"id": "1"}, {"id": "2"}], "has_next_page": False})
-    with patch("tweet_scraper.requests.get", return_value=resp):
+    with patch("tweet_scraper.api.requests.get", return_value=resp):
         out = list(paged_get("http://x", {}, "key", limit=10))
     assert [t["id"] for t in out] == ["1", "2"]
 
@@ -72,7 +72,7 @@ def test_paged_get_respects_limit():
     resp = FakeResp(
         200, {"tweets": [{"id": "1"}, {"id": "2"}, {"id": "3"}], "has_next_page": False}
     )
-    with patch("tweet_scraper.requests.get", return_value=resp):
+    with patch("tweet_scraper.api.requests.get", return_value=resp):
         out = list(paged_get("http://x", {}, "key", limit=2))
     assert [t["id"] for t in out] == ["1", "2"]
 
@@ -80,7 +80,7 @@ def test_paged_get_respects_limit():
 def test_paged_get_follows_cursor_across_pages():
     page1 = FakeResp(200, {"tweets": [{"id": "1"}], "has_next_page": True, "next_cursor": "c1"})
     page2 = FakeResp(200, {"tweets": [{"id": "2"}], "has_next_page": False})
-    with patch("tweet_scraper.requests.get", side_effect=[page1, page2]) as mock_get:
+    with patch("tweet_scraper.api.requests.get", side_effect=[page1, page2]) as mock_get:
         out = list(paged_get("http://x", {"query": "q"}, "key", limit=10))
     assert [t["id"] for t in out] == ["1", "2"]
     # second request must carry the cursor returned by page 1
@@ -91,8 +91,8 @@ def test_paged_get_retries_on_429_then_succeeds():
     bad = FakeResp(429, {})
     good = FakeResp(200, {"tweets": [{"id": "1"}], "has_next_page": False})
     with (
-        patch("tweet_scraper.time.sleep"),
-        patch("tweet_scraper.requests.get", side_effect=[bad, good]),
+        patch("tweet_scraper.api.time.sleep"),
+        patch("tweet_scraper.api.requests.get", side_effect=[bad, good]),
     ):
         out = list(paged_get("http://x", {}, "key", limit=10))
     assert [t["id"] for t in out] == ["1"]
@@ -102,8 +102,8 @@ def test_paged_get_retries_on_500_then_succeeds():
     bad = FakeResp(500, {})
     good = FakeResp(200, {"tweets": [{"id": "1"}], "has_next_page": False})
     with (
-        patch("tweet_scraper.time.sleep"),
-        patch("tweet_scraper.requests.get", side_effect=[bad, good]),
+        patch("tweet_scraper.api.time.sleep"),
+        patch("tweet_scraper.api.requests.get", side_effect=[bad, good]),
     ):
         out = list(paged_get("http://x", {}, "key", limit=10))
     assert [t["id"] for t in out] == ["1"]
@@ -112,8 +112,8 @@ def test_paged_get_retries_on_500_then_succeeds():
 def test_paged_get_retries_on_connection_error():
     good = FakeResp(200, {"tweets": [{"id": "1"}], "has_next_page": False})
     with (
-        patch("tweet_scraper.time.sleep"),
-        patch("tweet_scraper.requests.get", side_effect=[requests.ConnectionError(), good]),
+        patch("tweet_scraper.api.time.sleep"),
+        patch("tweet_scraper.api.requests.get", side_effect=[requests.ConnectionError(), good]),
     ):
         out = list(paged_get("http://x", {}, "key", limit=10))
     assert [t["id"] for t in out] == ["1"]
@@ -121,7 +121,7 @@ def test_paged_get_retries_on_connection_error():
 
 def test_paged_get_stops_when_no_tweets():
     resp = FakeResp(200, {"tweets": [], "has_next_page": True, "next_cursor": "c1"})
-    with patch("tweet_scraper.requests.get", return_value=resp):
+    with patch("tweet_scraper.api.requests.get", return_value=resp):
         out = list(paged_get("http://x", {}, "key", limit=10))
     assert out == []
 

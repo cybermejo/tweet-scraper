@@ -14,7 +14,7 @@ dependencies = ["requests>=2.31.0"]
 tweet-scraper = "tweet_scraper:main"
 
 [tool.setuptools]
-py-modules = ["tweet_scraper"]
+packages = ["tweet_scraper"]
 
 [tool.ruff]
 line-length = 100

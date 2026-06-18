@@ -17,9 +17,12 @@ Data flow: `scraper/vars.json → scraper/tweet_scraper.py → tweets.csv → Tw
 
 ## Architecture
 
-- `scraper/tweet_scraper.py` — single-module CLI. Key seams: `build_query`
-  (search syntax), `paged_get` (HTTP + retry + cursor paging), `flatten`
-  (tweet → CSV row), `main` (CLI orchestration).
+- `scraper/tweet_scraper/` — the CLI package (flat public API preserved via
+  `__init__` re-exports, so `from tweet_scraper import X` still works). Modules:
+  `config` (vars.json load/validate + date parsing), `query` (`build_query`,
+  handle extraction), `api` (HTTP client: `paged_get` retry/cursor paging,
+  per-endpoint fetchers — patch HTTP here, e.g. `tweet_scraper.api.requests`),
+  `cli` (`flatten` tweet → CSV row, streaming writes, `main`).
 - `scraper/tests/` — pytest, fully mocked (no network, no API key).
   `scraper/conftest.py` puts the scraper dir on `sys.path`.
 - `studio/src/App.jsx` — the entire Studio UI (lexicons, tone patterns, CSV upload).
